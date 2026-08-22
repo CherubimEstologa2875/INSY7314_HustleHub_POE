@@ -1,0 +1,24 @@
+{
+  "name": "hustlehub-backend",
+  "version": "1.0.0",
+  "description": "Minimal Node.js and Express.js backend starter for HustleHub+.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "keywords": [
+    "hustlehub",
+    "express",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

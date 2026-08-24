@@ -31,7 +31,36 @@ async function registerUser(req, res) {
   });
 }
 
-module.exports = { registerUser };
+async function loginUser(req, res) {
+  const { email, password } = req.body || {};
+
+  // HTTP 400: Bad Request
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Email and password are required",
+    });
+  }
+
+  const user = userRepository.findByEmail(email);
+
+  // HTTP 401: Unauthorized
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid email or password",
+    });
+  }
+
+  // HTTP 200: OK
+  return res.status(200).json({
+    success: true,
+    message: "Login successful",
+    data: { user: userRepository.toPublic(user) },
+  });
+}
+
+module.exports = { registerUser, loginUser };
 
 // References:
 // 1. Express.js. n.d. Response. [Online]. Available at: https://expressjs.com/en/5x/api/response/ [Accessed 24 August 2026].

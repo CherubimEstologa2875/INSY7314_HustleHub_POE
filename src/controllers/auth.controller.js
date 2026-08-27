@@ -1,5 +1,6 @@
 const userRepository = require("../repositories/user.repository");
 const { hashPassword, verifyPassword } = require("../utils/password");
+const { signAccessToken } = require("../utils/token");
 
 async function registerUser(req, res) {
   const { fullName, email, password, role } = req.body || {};
@@ -52,15 +53,22 @@ async function loginUser(req, res) {
     });
   }
 
+  const accessToken = signAccessToken(user);
+
   // HTTP 200: OK
   return res.status(200).json({
     success: true,
     message: "Login successful",
-    data: { user: userRepository.toPublic(user) },
+    data: { user: userRepository.toPublic(user), accessToken },
   });
 }
 
-module.exports = { registerUser, loginUser };
+function getCurrentUser(req, res) {
+  // req.user was set by the authenticate middleware
+  return res.status(200).json({ success: true, data: { user: req.user } });
+}
+
+module.exports = { registerUser, loginUser, getCurrentUser };
 
 // References:
 // 1. Express.js. n.d. Response. [Online]. Available at: https://expressjs.com/en/5x/api/response/ [Accessed 24 August 2026].

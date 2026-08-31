@@ -13,6 +13,8 @@ function authenticate(req, res, next) {
     });
   }
 
+  const token = match[1].trim();
+
   try {
     const payload = verifyAccessToken(token);
     if (!validateAuthPayload(payload)) throw new Error("Invalid token payload");

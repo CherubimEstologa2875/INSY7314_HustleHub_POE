@@ -1,0 +1,10 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = true
+	symlinks = false
+	ignorecase = true
+[remote "origin"]
+	url = https://github.com/EMGPPT/emgppt-insy7314-g1-2026-insy7314-g1-2026-part1-cherubimestologa2875.git
+	fetch = +refs/*:refs/*
+	mirror = true

@@ -3,9 +3,10 @@ const { validateAuthPayload } = require("../utils/validation");
 
 function authenticate(req, res, next) {
   const header = req.headers.authorization || "";
-  const match = header.match(/^Bearer\s+(.+)$/i);
+  const match = /^Bearer\s+(.+)$/.exec(header);
+  const token = match && match[1];
 
-  if (!match) {
+  if (!token) {
     return res.status(401).json({
       success: false,
       message: "Missing or malformed Authorization header",
@@ -15,20 +16,9 @@ function authenticate(req, res, next) {
   const token = match[1].trim();
 
   try {
-    const payload = verifyAccessToken(token); // { sub, email, role, iat, exp }
-
-    if (!validateAuthPayload(payload)) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid or expired token",
-      });
-    }
-
-    req.user = {
-      id: payload.sub,
-      email: payload.email,
-      role: payload.role,
-    };
+    const payload = verifyAccessToken(token);
+    if (!validateAuthPayload(payload)) throw new Error("Invalid token payload");
+    req.user = { id: payload.sub, email: payload.email, role: payload.role };
     return next();
   } catch (error) {
     return res.status(401).json({

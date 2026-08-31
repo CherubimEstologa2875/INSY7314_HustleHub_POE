@@ -17,22 +17,14 @@ function createApp() {
     });
   });
 
-  app.use((err, _req, res, next) => {
-    if (err instanceof SyntaxError && "body" in err) {
-      return res.status(400).json({
-        success: false,
-        message: "Malformed JSON body",
-      });
+  app.use((error, _req, res, next) => {
+    if (error.type === "entity.too.large") {
+      return res.status(413).json({ success: false, message: "Request body is too large" });
     }
-
-    if (err && (err.type === "entity.too.large" || err.status === 413)) {
-      return res.status(413).json({
-        success: false,
-        message: "Request body is too large",
-      });
+    if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
+      return res.status(400).json({ success: false, message: "Malformed request body" });
     }
-
-    return next(err);
+    return next(error);
   });
 
   return app;

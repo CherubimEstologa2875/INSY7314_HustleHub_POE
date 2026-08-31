@@ -3,7 +3,7 @@ const { hashPassword, verifyPassword } = require("../utils/password");
 const { signAccessToken } = require("../utils/token");
 
 async function registerUser(req, res) {
-  const { fullName, email, password, role } = req.body || {};
+  const { fullName, email, password, role } = req.validatedBody || {};
 
   // HTTP 400: Bad Request
   if (!fullName || !email || !password || !role) {
@@ -33,7 +33,7 @@ async function registerUser(req, res) {
 }
 
 async function loginUser(req, res) {
-  const { email, password } = req.body || {};
+  const { email, password } = req.validatedBody || {};
 
   // HTTP 400: Bad Request
   if (!email || !password) {

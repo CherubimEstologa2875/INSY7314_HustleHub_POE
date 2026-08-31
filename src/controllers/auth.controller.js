@@ -3,15 +3,7 @@ const { hashPassword, verifyPassword } = require("../utils/password");
 const { signAccessToken } = require("../utils/token");
 
 async function registerUser(req, res) {
-  const { fullName, email, password, role } = req.body || {};
-
-  // HTTP 400: Bad Request
-  if (!fullName || !email || !password || !role) {
-    return res.status(400).json({
-      success: false,
-      message: "fullName, email, password and role are required",
-    });
-  }
+  const { fullName, email, password, role } = req.validatedBody || {};
 
   // HTTP 409: Conflict
   if (userRepository.findByEmail(email)) {
@@ -33,15 +25,7 @@ async function registerUser(req, res) {
 }
 
 async function loginUser(req, res) {
-  const { email, password } = req.body || {};
-
-  // HTTP 400: Bad Request
-  if (!email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "Email and password are required",
-    });
-  }
+  const { email, password } = req.validatedBody || {};
 
   const user = userRepository.findByEmail(email);
 

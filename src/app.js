@@ -2,6 +2,7 @@ const express = require("express");
 const authRoutes = require("./routes/auth.routes");
 const profileRoutes = require("./routes/profile.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
+const { notFoundHandler, errorHandler } = require("./middleware/error-handler");
 
 function createApp() {
   const app = express();
@@ -25,26 +26,12 @@ function createApp() {
   app.use("/api/dashboard", dashboardRoutes);
 
   // Unknown paths get JSON instead of Express's default HTML page
-  app.use((_req, res) => {
-    res.status(404).json({ success: false, message: "Route not found" });
-  });
+  app.use(notFoundHandler);
 
-  app.use((error, _req, res, _next) => {
-    if (error.type === "entity.too.large") {
-      return res.status(413).json({ success: false, message: "Request body is too large" });
-    }
-    if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
-      return res.status(400).json({ success: false, message: "Malformed request body" });
-    }
-
-    // Log the detail for us, send the caller something generic
-    console.error("Unhandled error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "An unexpected error occurred",
-    });
-  });
+  // Must be registered last, and take four arguments, or Express will not treat it as
+  // an error handler. Catches body-parser failures above and anything a route or its
+  // middleware throws or rejects with (including async controllers, via asyncHandler).
+  app.use(errorHandler);
 
   return app;
 }

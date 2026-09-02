@@ -11,6 +11,10 @@ const CERTS_DIR = path.join(__dirname, "..", "certs");
 const SSL_KEY_PATH = process.env.SSL_KEY_PATH || path.join(CERTS_DIR, "localhost-key.pem");
 const SSL_CERT_PATH = process.env.SSL_CERT_PATH || path.join(CERTS_DIR, "localhost-cert.pem");
 
+// Set once startServer() has an instance, so the crash handlers below can close it
+// instead of dropping in-flight connections with a bare process.exit().
+let httpsServer;
+
 function loadCredentials() {
   try {
     return {
@@ -25,6 +29,35 @@ function loadCredentials() {
   }
 }
 
+// Give in-flight requests a few seconds to finish, then exit regardless, so one slow
+// or stuck connection cannot keep a crashed process alive indefinitely.
+function shutdown(exitCode) {
+  if (!httpsServer) {
+    process.exit(exitCode);
+    return;
+  }
+
+  httpsServer.close(() => process.exit(exitCode));
+  setTimeout(() => process.exit(exitCode), 3000).unref();
+}
+
+// app.js's error handler catches everything that happens inside an Express request.
+// These two are the safety net for everything outside that: a promise nobody attached
+// a .catch() to, a callback that threw, a bug in a background timer. Node's own default
+// for an unhandled rejection is to crash the process anyway; logging first (server-side
+// only, never sent to any client) turns an untraceable crash into one we can investigate,
+// and exiting deliberately avoids continuing to serve requests from a process whose
+// state may now be inconsistent, which is riskier than a clean restart.
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+  shutdown(1);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+  shutdown(1);
+});
+
 function startServer() {
   const app = createApp();
   const host = process.env.HOST || "127.0.0.1";
@@ -32,7 +65,7 @@ function startServer() {
   const credentials = loadCredentials();
 
   // Express is unchanged; TLS wraps it, so every route is now served over HTTPS
-  https.createServer(credentials, app).listen(port, host, () => {
+  httpsServer = https.createServer(credentials, app).listen(port, host, () => {
     console.log(`HustleHub+ server running at https://${host}:${port}`);
   });
 }
@@ -51,3 +84,4 @@ module.exports = { startServer };
 
 // References:
 // 1. Node.js. n.d. HTTPS. [Online]. Available at: https://nodejs.org/api/https.html [Accessed 1 September 2026].
+// 2. Node.js. n.d. process. [Online]. Available at: https://nodejs.org/api/process.html#event-uncaughtexception [Accessed 2 September 2026].

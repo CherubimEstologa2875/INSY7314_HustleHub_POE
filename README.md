@@ -77,7 +77,7 @@ once with the token from `POST /api/auth/login` and once without.
 
 ```text
 src/
-  server.js                       Loads environment variables and starts the HTTPS server
+  server.js                       Loads environment variables, starts the HTTPS server, and catches process-level crashes
   app.js                          Configures Express, parsers, routes, and error handling
   routes/auth.routes.js           Maps authentication URLs to middleware and controllers
   routes/profile.routes.js        Protected profile routes (whole router requires a JWT)
@@ -87,9 +87,11 @@ src/
   controllers/dashboard.controller.js Placeholder income and estimated tax figures
   middleware/validate-input.js    Validates request bodies before controllers run
   middleware/authenticate.js      Verifies Bearer JWTs for protected routes
+  middleware/error-handler.js     Centralized 404 and error responses; never leaks internals
   utils/validation.js             Validation rules for request data and JWT claims
   utils/password.js               bcrypt password hashing and verification
   utils/token.js                  JWT signing and verification
+  utils/async-handler.js          Wraps async controllers so a rejected promise reaches the error handler
   repositories/user.repository.js In-memory user storage and public-user mapping
 ```
 
@@ -145,11 +147,41 @@ secrets manager, and additionally redirect HTTP to HTTPS and enable HSTS.
 
 ### Error handling
 
-Error responses are controlled and never expose internal detail. Unknown paths return a JSON
-`404` instead of Express's default HTML page, and any unhandled error is logged server-side and
-returned to the caller as a generic `500 An unexpected error occurred`. Allowing an error to reach
-Express's built-in handler would return a full stack trace containing absolute file paths, which the
-brief prohibits. `x-powered-by` is disabled so the framework is not advertised in responses.
+Error responses are centralized in `src/middleware/error-handler.js` and registered last in
+`app.js`, so every path through the API ends at the same two handlers instead of each route
+deciding for itself what an error looks like:
+
+1. **Unknown paths** return a JSON `404` (`notFoundHandler`) instead of Express's default HTML
+   page, which would otherwise disclose the framework in its title and stack-style formatting.
+2. **Everything else** goes through `errorHandler`. Body-parser failures (an oversized body, an
+   unsupported charset, malformed JSON) get a slightly more specific message, because that detail
+   describes the caller's own request and gives nothing away about the server. Every other error
+   - a bug, a dependency throwing, anything unanticipated - gets the same fixed
+   `500 An unexpected error occurred`. Allowing an error to reach Express's built-in handler
+   instead would return a full stack trace containing absolute file paths, which the brief
+   prohibits. `x-powered-by` is disabled so the framework is not advertised in responses either.
+
+The full error (message, stack, request method and path) is still logged server-side with
+`console.error`, tagged with a random `errorId` (`crypto.randomUUID()`) that is also returned to
+the caller in the `500` response body. The id lets a real caller reference a specific failure when
+reporting a problem without the id itself revealing anything about what went wrong.
+
+**Nothing reaches the caller by accident.** `registerUser` and `loginUser` are `async` functions
+that `await` bcrypt and JWT work, so a rejection there needs to reach `errorHandler` the same way a
+thrown error does. Every route wraps its controller in `asyncHandler` (`src/utils/async-handler.js`),
+which turns a rejected promise into a call to `next(error)`. Express 5 already forwards async
+rejections automatically, but wrapping explicitly keeps that guarantee visible at each route and
+independent of the framework version, rather than relying on behaviour a reader has to already
+know about.
+
+**Failures outside a request are still caught.** A promise nobody attached a rejection handler to,
+or a bug in code that isn't running inside the Express request cycle, would otherwise crash the
+process with a raw stack trace on stdout and no other record of what happened - and since that
+takes the whole server down, it's an availability problem as much as an error-handling one.
+`src/server.js` listens for `unhandledRejection` and `uncaughtException`, logs the error
+server-side, and then closes the HTTPS server (allowing in-flight requests up to three seconds to
+finish) before exiting, rather than continuing to serve requests from a process whose state may
+now be inconsistent.
 
 ## Verification
 

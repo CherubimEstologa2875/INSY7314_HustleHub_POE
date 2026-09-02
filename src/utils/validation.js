@@ -48,4 +48,15 @@ function validateAuthPayload(payload) {
     typeof payload.email === "string" && EMAIL_PATTERN.test(payload.email) && payload.role === "user";
 }
 
-module.exports = { validateRegisterBody, validateLoginBody, validateAuthPayload };
+// Only fullName may be changed through the profile route
+function validateProfileUpdateBody(body) {
+  const fieldError = checkFields(body, ["fullName"]);
+  if (fieldError) return { ok: false, message: fieldError };
+
+  const fullName = typeof body.fullName === "string" ? body.fullName.trim().replace(/\s+/g, " ") : "";
+  if (!NAME_PATTERN.test(fullName)) return { ok: false, message: "fullName is invalid" };
+
+  return { ok: true, value: { fullName } };
+}
+
+module.exports = { validateRegisterBody, validateLoginBody, validateProfileUpdateBody, validateAuthPayload };

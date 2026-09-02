@@ -1,4 +1,8 @@
-const { validateRegisterBody, validateLoginBody } = require("../utils/validation");
+const {
+  validateRegisterBody,
+  validateLoginBody,
+  validateProfileUpdateBody,
+} = require("../utils/validation");
 
 function validateInput(validator) {
   return (req, res, next) => {
@@ -12,4 +16,5 @@ function validateInput(validator) {
 module.exports = {
   validateRegisterInput: validateInput(validateRegisterBody),
   validateLoginInput: validateInput(validateLoginBody),
+  validateProfileUpdateInput: validateInput(validateProfileUpdateBody),
 };

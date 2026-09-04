@@ -8,24 +8,6 @@
   },
   "item": [
     {
-      "name": "Health Check",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/health",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "health"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
       "name": "Register - Success",
       "request": {
         "auth": {

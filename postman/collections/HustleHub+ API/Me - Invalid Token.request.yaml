@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/me"
+method: GET
+headers:
+  Authorization: "{{bearer_token_14lb}}"
+order: 16000

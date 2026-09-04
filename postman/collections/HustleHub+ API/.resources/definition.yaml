@@ -1,0 +1,9 @@
+$kind: collection
+description: ""
+variables:
+  - key: baseUrl
+    value: https://localhost:3443
+    disabled: false
+  - key: token
+    secret: true
+    disabled: false

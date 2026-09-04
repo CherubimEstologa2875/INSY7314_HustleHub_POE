@@ -1,213 +1,158 @@
-# HustleHub+ Backend
+# HustleHub+ Part 1 Backend
 
-HustleHub+ is a Node.js and Express REST API starter for a platform where users can create an account, sign in, and access their authenticated profile. The current implementation focuses on authentication: users can register, receive a JSON Web Token (JWT) after login, and use it to call `GET /api/auth/me`.
+HustleHub+ is a secure freelance marketplace platform. Freelancers will eventually advertise services and clients will browse and book those services. Part 1 establishes the secure backend foundation: user registration, login, JWT authentication, input validation, HTTPS, and controlled error handling.
+
+## Part 1 Scope
+
+This repository implements the Node.js and Express backend required for Part 1. User records are stored in memory, which is permitted at this stage. The in-memory repository is isolated so it can be replaced by MongoDB in a later part without changing the authentication controllers or security middleware.
+
+The current protected profile and dashboard routes are small authenticated examples. Marketplace browsing, gig management, bookings, transactions, financial calculations, and the React frontend belong to later stages of the POE and are not claimed as Part 1 functionality.
 
 ## Intended Users
 
-The system is intended for registered HustleHub+ users and the client application that interacts with the API. Users can register and log in through public endpoints, while protected endpoints are available only to authenticated users. Registration currently permits only the `user` role so clients cannot self-assign elevated privileges.
+The intended users are HustleHub+ clients and freelancers using the future React client application. Part 1 supports creating an account, signing in, and accessing information belonging to the authenticated user. Registration only accepts the `user` role so a user cannot assign themselves elevated privileges.
+
+## Architecture
+
+The overall system follows the MERN direction. Part 1 implements the backend boundary shown below; the React client and MongoDB persistence are planned components for later development.
+
+```mermaid
+flowchart LR
+    React[React client planned for later part]
+    Boundary[HTTPS and local SSL certificate]
+    Express[Node.js and Express API]
+    Auth[Validation and JWT authentication]
+    Repo[In-memory user repository Part 1]
+    Mongo[MongoDB planned for later part]
+
+    React -->|HTTPS JSON requests| Boundary
+    Boundary --> Express
+    Express --> Auth
+    Auth --> Repo
+    Repo -.->|replace later| Mongo
+```
+
+The client and API are separated by an HTTPS system boundary. Public authentication endpoints issue tokens, while protected routes validate a bearer token on every request before accessing user data.
 
 ## Running the Backend
 
-Requirements: Node.js 20 or later, and OpenSSL (bundled with Git for Windows).
+Requirements: Node.js 20 or later and OpenSSL. Open a terminal in the project root.
 
-**1. Install dependencies**
+Install the dependencies:
 
 ```bash
 npm install
 ```
 
-**2. Create the environment file**
+Copy `.env.example` to `.env` and replace the example JWT secret with a strong private value. The supplied local certificate files are in `certs/`.
 
-Copy `.env.example` to `.env` and set a strong, private `JWT_SECRET`.
-
-**3. The local SSL certificate**
-
-The API is served over HTTPS only, so a key and certificate must exist before the server will
-start. Both are already committed in `certs/`, so no action is needed to run the project. See
-*Security Decisions > HTTPS* for why they are committed and why that would not be done outside
-an academic submission.
-
-To regenerate them (for example once the certificate expires after a year), run this from the
-project root:
-
-```bash
-openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes \
-  -keyout certs/localhost-key.pem \
-  -out certs/localhost-cert.pem \
-  -subj "/C=ZA/ST=Western Cape/L=Cape Town/O=HustleHub\+/OU=INSY7314/CN=localhost" \
-  -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
-```
-
-It writes two files into `certs/`:
-
-| File | Purpose |
-| --- | --- |
-| `localhost-key.pem` | Private key. Performs the decryption. |
-| `localhost-cert.pem` | Public certificate presented to every client. |
-
-**4. Start the server**
+Start the HTTPS server:
 
 ```bash
 npm run dev
 ```
 
-The server refuses to start if the key or certificate is missing, rather than falling back to
-plain HTTP.
+The local API base URL is:
+
+```text
+https://localhost:3443
+```
+
+The server refuses to start if the SSL key or certificate cannot be read. It does not fall back to plain HTTP.
+
+To regenerate the local certificate, run the following from the project root:
+
+```bash
+openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes \
+  -keyout certs/localhost-key.pem \
+  -out certs/localhost-cert.pem \
+  -subj "/C=ZA/ST=Western Cape/L=Cape Town/O=HustleHub+/OU=INSY7314/CN=localhost" \
+  -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+```
+
+The certificate is self-signed for local academic testing. In Postman, turn off SSL certificate verification when testing locally.
 
 ## API Endpoints
 
-```text
-Public
-GET    /api/health
-POST   /api/auth/register
-POST   /api/auth/login
+Public endpoints:
 
-Protected - require "Authorization: Bearer <token>"
-GET    /api/auth/me
-GET    /api/profile
-PATCH  /api/profile
-GET    /api/dashboard
-```
+- `POST /api/auth/register` creates a user account.
+- `POST /api/auth/login` authenticates a user and returns a JWT.
 
-Base URL during local development is `https://localhost:3443`. Every protected route
-returns `401` without a valid token, so each one can be demonstrated twice in Postman:
-once with the token from `POST /api/auth/login` and once without.
+Protected endpoints require `Authorization: Bearer <token>`:
+
+- `GET /api/auth/me` returns the authenticated user.
+- `GET /api/profile` returns the authenticated user's profile.
+- `PATCH /api/profile` updates the authenticated user's name.
+- `GET /api/dashboard` returns a protected placeholder dashboard response.
 
 ## Backend Structure
 
-```text
-src/
-  server.js                       Loads environment variables, starts the HTTPS server, and catches process-level crashes
-  app.js                          Configures Express, parsers, routes, and error handling
-  routes/auth.routes.js           Maps authentication URLs to middleware and controllers
-  routes/profile.routes.js        Protected profile routes (whole router requires a JWT)
-  routes/dashboard.routes.js      Protected placeholder financial summary
-  controllers/auth.controller.js  Registration, login, and current-user handlers
-  controllers/profile.controller.js Reads and updates the authenticated user
-  controllers/dashboard.controller.js Placeholder income and estimated tax figures
-  middleware/validate-input.js    Validates request bodies before controllers run
-  middleware/authenticate.js      Verifies Bearer JWTs for protected routes
-  middleware/error-handler.js     Centralized 404 and error responses; never leaks internals
-  utils/validation.js             Validation rules for request data and JWT claims
-  utils/password.js               bcrypt password hashing and verification
-  utils/token.js                  JWT signing and verification
-  utils/async-handler.js          Wraps async controllers so a rejected promise reaches the error handler
-  repositories/user.repository.js In-memory user storage and public-user mapping
-```
+The backend is organized under `src/`:
 
-The repository is in memory for this starter, so data is lost when the process stops. A production implementation should replace it with a database repository while preserving these controller and security boundaries.
+- `server.js` loads environment variables, loads the SSL certificate, and starts the HTTPS server.
+- `app.js` configures Express, body parsing, routes, and error handling.
+- `routes/auth.routes.js` maps registration, login, and current-user routes.
+- `routes/profile.routes.js` maps protected profile routes.
+- `routes/dashboard.routes.js` maps the protected dashboard route.
+- `controllers/auth.controller.js` handles registration, login, and the current user.
+- `controllers/profile.controller.js` reads and updates the authenticated profile.
+- `controllers/dashboard.controller.js` returns the protected Part 1 dashboard placeholder.
+- `middleware/validate-input.js` validates request bodies before controllers run.
+- `middleware/authenticate.js` verifies bearer JWTs on protected requests.
+- `middleware/error-handler.js` returns controlled 404 and 500 responses.
+- `utils/validation.js` contains input and JWT claim validation rules.
+- `utils/password.js` hashes and verifies passwords with bcrypt.
+- `utils/token.js` signs and verifies HS256 JWTs.
+- `repositories/user.repository.js` stores users in memory and removes password hashes from public responses.
 
 ## Security Decisions
 
 ### Password hashing
 
-Passwords are never stored or returned in plain text. `bcrypt` hashes each password with 12 salt rounds during registration, and login uses `bcrypt.compare` against the stored hash. `toPublic` removes the password hash from API responses. `JWT_SECRET` is read from the environment and the application fails fast if it is missing instead of using a predictable fallback.
+Passwords are never stored or returned in plain text. Registration hashes each password with bcrypt using 12 salt rounds. Login compares the submitted password against the stored hash. The public-user mapping removes `passwordHash` before a response is returned.
 
-### Token-based authentication
+### JWT authentication
 
-After successful login the API signs a short-lived JWT containing only the user ID (`sub`), email, and role. No password, hash, or other sensitive value is placed in the token, because a JWT payload is merely base64-encoded and can be read by anyone holding the token.
+Successful login issues a short-lived HS256 JWT containing only the user ID, email, and role. The signing secret is read from `JWT_SECRET`, and the application fails fast if it is missing.
 
-Login is the only place a token is issued. Every route beyond login and registration is protected by the `authenticate` middleware, and the token is re-validated **on every request** rather than trusted once at login. Because the API is stateless, the token is the only thing identifying the caller, so each request must prove itself independently. The middleware performs four checks in order:
-
-1. **Header shape** - the `Authorization` header must carry a `Bearer` credential. The scheme is matched case-insensitively, as RFC 7235 requires.
-2. **Signature and expiry** - `jwt.verify` rejects any token that was not signed with our secret or whose `exp` has passed.
-3. **Algorithm pinning** - verification is restricted to `HS256`. Without this, the library would honour the algorithm named in the token's own header, which allows the well-known `alg: none` and RS256-to-HS256 confusion attacks in which an attacker forges a token the server accepts. This is verified by test: a hand-crafted `alg: none` token is rejected with 401.
-4. **Claim and subject validation** - a cryptographically valid token can still carry claims the API never issues, so the payload shape is checked, and the account named by `sub` must still exist. A token for a deleted account is refused even while it remains within its validity window.
-
-Failures return a deliberately generic `401 Invalid or expired token`. The API does not distinguish an expired token from a forged one, because telling an attacker which of the two failed hands them free reconnaissance. Identity is always read from the verified token (`req.user`) and never from the request body or query string, so a caller cannot act on another user's behalf by supplying a different ID.
+Every protected request passes through the authentication middleware. The middleware checks the bearer header, verifies the signature and expiry, restricts verification to HS256, validates the claims, and confirms that the user still exists. Invalid or expired credentials receive a generic `401` response.
 
 ### Input validation
 
-Authentication input is validated before it reaches a controller. The API requires JSON objects, rejects unexpected fields, normalizes emails, restricts names to safe characters and bounded lengths, and requires passwords to be 8-128 characters containing letters and numbers without whitespace. Roles are allow-listed to `user`. JWT claims are validated after cryptographic verification. JSON and URL-encoded bodies are limited to 10 KB, while malformed or oversized bodies are rejected. These controls reduce malformed data, type confusion, injection opportunities, and endpoint abuse.
+Registration and login input is validated before controller processing. The API requires JSON objects, rejects unexpected fields, normalizes email addresses, validates email formats, restricts names to safe characters and bounded lengths, and requires passwords to contain letters and numbers without whitespace. Only the `user` role is accepted. Request bodies are limited to 10 KB.
 
 ### HTTPS
 
-The API is served only over HTTPS. `src/server.js` starts `https.createServer(...)` instead of
-`app.listen(...)`, and there is no HTTP listener, so there is no insecure way to reach the API. If
-the certificate cannot be read the server exits instead of falling back to HTTP, because a silent
-downgrade would send passwords and tokens in clear text.
+The server uses `https.createServer` with a locally configured SSL key and certificate. There is no plain HTTP listener. HTTPS encrypts passwords during registration and login and protects JWTs sent in subsequent requests. The certificate is self-signed and intended only for local testing.
 
-This matters because two sensitive values travel in ordinary requests: the plain-text password on
-registration and login, and the JWT on every protected request afterwards. Hashing protects
-passwords in storage, not in transit, and a JWT is a bearer token, so anyone who intercepts one
-can use it until it expires. TLS encrypts both, and also detects tampering with the response.
+### Controlled errors
 
-The certificate is self-signed, which is why its subject and issuer are identical: no Certificate
-Authority will vouch for `localhost`. The encryption is just as strong, but clients do not trust
-the identity, so Postman needs *SSL certificate verification* turned off and curl needs `-k`. The
-browser warning is expected. The certificate includes Subject Alternative Name entries for
-`DNS:localhost` and `IP:127.0.0.1`, which modern clients require because they ignore the legacy
-Common Name field.
+Unknown routes return JSON `404` responses. Malformed or oversized request bodies are handled centrally. Unexpected server errors return a generic message and an error ID rather than stack traces, file paths, configuration values, or other internal details. Detailed errors are logged server-side only.
 
-`certs/` is committed so the project runs immediately after cloning. This is a deliberate
-convenience for an academic submission and not correct practice, but it is harmless here: the key
-secures only localhost traffic and is self-signed, so it protects nothing of value. A real
-deployment would gitignore `certs/`, use a CA-issued certificate, distribute the key through a
-secrets manager, and additionally redirect HTTP to HTTPS and enable HSTS.
+## Postman Testing
 
-### Error handling
+The Postman collection is located at `postman/HustleHub-API.postman_collection.json`.
 
-Error responses are centralized in `src/middleware/error-handler.js` and registered last in
-`app.js`, so every path through the API ends at the same two handlers instead of each route
-deciding for itself what an error looks like:
+In Postman, disable SSL certificate verification for the local self-signed certificate. Run the successful registration request first, then run the successful login request and copy its `accessToken` into the collection variable named `token`. Use that token for the protected requests.
 
-1. **Unknown paths** return a JSON `404` (`notFoundHandler`) instead of Express's default HTML
-   page, which would otherwise disclose the framework in its title and stack-style formatting.
-2. **Everything else** goes through `errorHandler`. Body-parser failures (an oversized body, an
-   unsupported charset, malformed JSON) get a slightly more specific message, because that detail
-   describes the caller's own request and gives nothing away about the server. Every other error
-   - a bug, a dependency throwing, anything unanticipated - gets the same fixed
-   `500 An unexpected error occurred`. Allowing an error to reach Express's built-in handler
-   instead would return a full stack trace containing absolute file paths, which the brief
-   prohibits. `x-powered-by` is disabled so the framework is not advertised in responses either.
+The collection demonstrates successful registration and login, authenticated access, protected access without a token, invalid input, duplicate registration, incorrect login credentials, invalid tokens, profile updates, and controlled error responses.
 
-The full error (message, stack, request method and path) is still logged server-side with
-`console.error`, tagged with a random `errorId` (`crypto.randomUUID()`) that is also returned to
-the caller in the `500` response body. The id lets a real caller reference a specific failure when
-reporting a problem without the id itself revealing anything about what went wrong.
+The recommended evidence includes screenshots of successful registration, successful login with token generation, one authenticated protected request, one request rejected without a token, and representative invalid registration and login requests.
 
-**Nothing reaches the caller by accident.** `registerUser` and `loginUser` are `async` functions
-that `await` bcrypt and JWT work, so a rejection there needs to reach `errorHandler` the same way a
-thrown error does. Every route wraps its controller in `asyncHandler` (`src/utils/async-handler.js`),
-which turns a rejected promise into a call to `next(error)`. Express 5 already forwards async
-rejections automatically, but wrapping explicitly keeps that guarantee visible at each route and
-independent of the framework version, rather than relying on behaviour a reader has to already
-know about.
+## Part 1 Submission Checklist
 
-**Failures outside a request are still caught.** A promise nobody attached a rejection handler to,
-or a bug in code that isn't running inside the Express request cycle, would otherwise crash the
-process with a raw stack trace on stdout and no other record of what happened - and since that
-takes the whole server down, it's an availability problem as much as an error-handling one.
-`src/server.js` listens for `unhandledRejection` and `uncaughtException`, logs the error
-server-side, and then closes the HTTPS server (allowing in-flight requests up to three seconds to
-finish) before exiting, rather than continuing to serve requests from a process whose state may
-now be inconsistent.
+- MERN-oriented architecture diagram showing system boundaries and security controls.
+- Node.js and Express backend API.
+- User registration and login functionality.
+- Bcrypt password hashing with no plain-text password storage.
+- JWT issuance at login and validation on every protected request.
+- HTTPS using the local SSL certificate.
+- Input validation and controlled error responses.
+- README explaining the system, intended users, backend structure, and security decisions.
+- Postman collection and API response screenshots.
+- Demonstration video showing the API running, user registration, successful login, and JWT generation.
 
-## Verification
+## Limitations For Part 1
 
-Test valid registration and login, plus missing fields, unexpected fields, invalid formats, weak passwords, oversized bodies, malformed JSON, and invalid or expired JWTs. Install dependencies with `npm install` before starting the server.
-
-The protected routes have been verified against a running server for the following cases:
-
-| Case | Expected |
-| --- | --- |
-| Protected route with a valid token | `200` |
-| Protected route with no `Authorization` header | `401` |
-| Protected route with a `Basic` scheme instead of `Bearer` | `401` |
-| Token signed with the wrong secret | `401` |
-| Hand-crafted `alg: none` token | `401` |
-| Token that has passed its expiry | `401` |
-| `PATCH /api/profile` attempting to set `role` | `400` unexpected field |
-| Unknown path | `404` JSON, no stack trace |
-
-HTTPS has been verified against the running server:
-
-| Case | Result |
-| --- | --- |
-| `https://localhost:3443/api/health` | `200` |
-| `https://127.0.0.1:3443/api/health` (SAN IP entry) | `200` |
-| Negotiated protocol | TLS 1.3, `TLS_AES_256_GCM_SHA384` |
-| Certificate subject and issuer | Identical, confirming self-signed |
-| `curl` without `-k` | Fails, exit code 60, certificate not trusted |
-| Plain HTTP on port 3443 | No response; no HTTP listener exists |
-| All protected routes over HTTPS | Behave exactly as over HTTP |
+User data is intentionally stored in memory and is lost when the server stops. A database, React frontend, role-based access control for multiple user types, gig management, booking workflows, transaction records, tax calculations, rate limiting, security headers, automated pipelines, and monitoring are reserved for later POE parts.

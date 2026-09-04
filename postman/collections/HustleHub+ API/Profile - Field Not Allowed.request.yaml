@@ -1,0 +1,9 @@
+$kind: http-request
+url: "{{baseUrl}}/api/profile"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: "{\r\n    \"role\": \"admin\"\r\n}\r\n"
+order: 19000

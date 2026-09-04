@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/profile"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: "{\r
+
+    \    \"fullName\": \"David M. Botha\"\r
+
+    }\r\n"
+order: 18000

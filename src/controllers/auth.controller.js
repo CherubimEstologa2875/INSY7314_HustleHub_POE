@@ -71,4 +71,5 @@ function getCurrentUser(req, res) {
 module.exports = { registerUser, loginUser, getCurrentUser };
 
 // References:
-// 1. Express.js. n.d. Response. [Online]. Available at: https://expressjs.com/en/5x/api/response/ [Accessed 24 August 2026].
+// Reference: Express.js. n.d.-c. Response. [Online]. Available at:
+// https://expressjs.com/en/5x/api/response/ [Accessed 4 September 2026].

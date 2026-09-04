@@ -11,7 +11,8 @@ if (!JWT_SECRET) {
 }
 
 function signAccessToken(user) {
-  // Keep the payload minimal: id + role are enough to authorize requests.
+  // Keep the payload minimal because JWT payloads are readable by token holders; never put
+  // passwords or password hashes in a token (npm, n.d.-b).
   const payload = { sub: user.id, email: user.email, role: user.role };
 
   return jwt.sign(payload, JWT_SECRET, {
@@ -21,12 +22,12 @@ function signAccessToken(user) {
 }
 
 function verifyAccessToken(token) {
-  // Throws (TokenExpiredError / JsonWebTokenError) on anything invalid — callers decide the HTTP response.
+  // Restrict verification to the algorithm selected by the application, not one supplied by
+  // an untrusted token header (npm, n.d.-b).
   return jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] });
 }
 
 module.exports = { signAccessToken, verifyAccessToken };
 
-// References:
-// 1. npm. 2025. jsonwebtoken. [Online]. Available at: https://www.npmjs.com/package/jsonwebtoken [Accessed 25 August 2026].
-// 2. Auth0. n.d. Critical vulnerabilities in JSON Web Token libraries. [Online]. Available at: https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/ [Accessed 1 September 2026].
+// Reference: npm. n.d.-b. jsonwebtoken. [Online]. Available at:
+// https://www.npmjs.com/package/jsonwebtoken [Accessed 4 September 2026].

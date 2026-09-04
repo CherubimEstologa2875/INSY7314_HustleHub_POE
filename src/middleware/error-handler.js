@@ -9,7 +9,8 @@ function notFoundHandler(_req, res) {
 // Central error handler. Registered last in app.js so it catches everything: body-parser
 // failures, synchronous throws in any middleware or controller, and rejected promises from
 // async controllers (forwarded via src/utils/async-handler.js, and automatically by Express 5
-// even where a handler isn't wrapped).
+// even where a handler isn't wrapped). This prevents internal implementation details from
+// becoming part of the public response (Express.js, n.d.; OWASP Foundation, n.d.-b).
 //
 // Every response here is a small, fixed set of generic messages. The caller never sees a
 // stack trace, a file path, a dependency's own error text, or anything else that describes
@@ -45,5 +46,9 @@ function errorHandler(error, req, res, _next) {
 module.exports = { notFoundHandler, errorHandler };
 
 // References:
-// 1. Express.js. n.d. Error Handling. [Online]. Available at: https://expressjs.com/en/guide/error-handling.html [Accessed 2 September 2026].
-// 2. OWASP. n.d. Improper Error Handling. [Online]. Available at: https://owasp.org/www-community/Improper_Error_Handling [Accessed 2 September 2026].
+// References:
+// Express.js. n.d.-b. Error handling. [Online]. Available at:
+// https://expressjs.com/en/guide/error-handling.html [Accessed 4 September 2026].
+// OWASP Foundation. n.d.-b. Error Handling Cheat Sheet. [Online]. Available at:
+// https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html
+// [Accessed 4 September 2026].

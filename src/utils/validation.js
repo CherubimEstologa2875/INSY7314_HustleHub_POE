@@ -1,3 +1,5 @@
+// Allowlist syntax, types, and lengths before values enter the application workflow
+// (OWASP Foundation, n.d.-a; The Independent Institute of Education, 2026).
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_PATTERN = /^[A-Za-z][A-Za-z .'-]{1,99}$/;
 const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,128}$/;

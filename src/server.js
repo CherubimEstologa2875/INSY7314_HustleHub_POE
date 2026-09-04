@@ -64,7 +64,8 @@ function startServer() {
   const port = Number(process.env.PORT || 3443);
   const credentials = loadCredentials();
 
-  // Express is unchanged; TLS wraps it, so every route is now served over HTTPS
+  // TLS wraps Express so passwords and bearer tokens are encrypted in transit
+  // (Node.js, n.d.; The Independent Institute of Education, 2026).
   httpsServer = https.createServer(credentials, app).listen(port, host, () => {
     console.log(`HustleHub+ server running at https://${host}:${port}`);
   });
@@ -83,5 +84,7 @@ if (require.main === module) {
 module.exports = { startServer };
 
 // References:
-// 1. Node.js. n.d. HTTPS. [Online]. Available at: https://nodejs.org/api/https.html [Accessed 1 September 2026].
-// 2. Node.js. n.d. process. [Online]. Available at: https://nodejs.org/api/process.html#event-uncaughtexception [Accessed 2 September 2026].
+// Node.js. n.d. HTTPS. [Online]. Available at: https://nodejs.org/api/https.html
+// [Accessed 4 September 2026].
+// Node.js. n.d. Process. [Online]. Available at:
+// https://nodejs.org/api/process.html#event-uncaughtexception [Accessed 4 September 2026].

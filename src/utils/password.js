@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 
-// 12 salt rounds quadruples the security of the commonly cited 10 salt rounds
+// Bcrypt is an adaptive password hash; its work factor makes password guessing more costly.
+// The async API avoids blocking the Express event loop during hashing (npm, n.d.-a).
 const SALT_ROUNDS = 12;
 
 async function hashPassword(plainPassword) {
@@ -13,5 +14,5 @@ async function verifyPassword(plainPassword, storedHash) {
 
 module.exports = { hashPassword, verifyPassword };
 
-// References:
-// 1. npm. 2025. node.bcrypt.js. [Online]. Available at: https://www.npmjs.com/package/bcrypt. [Accessed 24 August 2026]
+// Reference: npm. n.d.-a. bcrypt. [Online]. Available at:
+// https://www.npmjs.com/package/bcrypt [Accessed 4 September 2026].

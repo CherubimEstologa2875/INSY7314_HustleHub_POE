@@ -8,6 +8,8 @@ function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
+  // Reduce framework fingerprinting and reject oversized JSON before it reaches a controller
+  // (Express.js, n.d.-a; OWASP Foundation, n.d.-a).
   app.use(express.json({ limit: "10kb" }));
   app.use(express.urlencoded({ extended: false, limit: "10kb" }));
 
@@ -18,7 +20,8 @@ function createApp() {
   app.use("/api/profile", profileRoutes);
   app.use("/api/dashboard", dashboardRoutes);
 
-  // Unknown paths get JSON instead of Express's default HTML page
+  // Unknown paths get JSON instead of Express's default HTML page, avoiding unnecessary
+  // framework details in an error response (Express.js, n.d.-b).
   app.use(notFoundHandler);
 
   // Must be registered last, and take four arguments, or Express will not treat it as

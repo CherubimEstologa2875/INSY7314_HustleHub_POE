@@ -30,7 +30,8 @@ function authenticate(req, res, next) {
     });
   }
 
-  // A valid signature does not mean the claims are ones we issued
+  // A valid signature does not mean the claims are ones we issued, so validate the payload
+  // shape and permitted role before trusting the identity (npm, n.d.-b).
   if (!validateAuthPayload(payload)) {
     return res.status(401).json({ success: false, message: "Invalid or expired token" });
   }

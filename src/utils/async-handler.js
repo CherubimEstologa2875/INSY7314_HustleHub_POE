@@ -13,4 +13,5 @@ function asyncHandler(handler) {
 module.exports = { asyncHandler };
 
 // References:
-// 1. Express.js. n.d. Error Handling. [Online]. Available at: https://expressjs.com/en/guide/error-handling.html [Accessed 2 September 2026].
+// Reference: Express.js. n.d.-b. Error handling. [Online]. Available at:
+// https://expressjs.com/en/guide/error-handling.html [Accessed 4 September 2026].

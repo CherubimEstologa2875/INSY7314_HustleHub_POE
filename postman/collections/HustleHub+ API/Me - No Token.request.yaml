@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/me"
+method: GET
+headers:
+  - key: Authorization
+    value: Bearer {{token}}
+    disabled: true
+body:
+  type: json
+  content: ""
+order: 15000

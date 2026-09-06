@@ -2,6 +2,12 @@
 
 HustleHub+ is a secure freelance marketplace platform. Freelancers will eventually advertise services and clients will browse and book those services. Part 1 establishes the secure backend foundation: user registration, login, JWT authentication, input validation, HTTPS, and controlled error handling (The Independent Institute of Education, 2026).
 
+## Demonstration Video
+
+[Click here to watch the demo video](https://youtu.be/DFl5a4ICBRY)
+
+The video shows the API running over HTTPS, user registration, successful login, and JWT generation.
+
 ## Part 1 Scope
 
 This repository implements the Node.js and Express backend required for Part 1. User records are stored in memory, which is permitted at this stage. The repository is isolated so it can be replaced by MongoDB in a later part without changing the authentication controllers or security middleware.

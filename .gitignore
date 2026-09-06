@@ -3,3 +3,7 @@ node_modules/
 tmp/
 *.log
 emgppt-*.git/
+
+# IDE and tool-local config
+.idea/
+.postman/
